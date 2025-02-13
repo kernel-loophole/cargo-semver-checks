@@ -1128,6 +1128,7 @@ macro_rules! add_lints {
 add_lints!(
     attribute_proc_macro_missing,
     auto_trait_impl_removed,
+    changes_trait_sealing,
     constructible_struct_adds_field,
     constructible_struct_adds_private_field,
     constructible_struct_changed_type,

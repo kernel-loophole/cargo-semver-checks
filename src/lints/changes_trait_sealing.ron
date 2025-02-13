@@ -1,0 +1,47 @@
+SemverQuery(
+    id: "trait_sealing_status_changed",
+    human_readable_name: "trait sealing status changed",
+    description: "The sealing status of a public trait has changed between versions. Such changes can be high-risk and may require a minor version bump.",
+    required_update: Minor,
+    lint_level: Warn,
+    query: r#"
+    {
+        CrateDiff {
+            baseline {
+                item {
+                    ... on Trait {
+                        name @outputs
+                        baseline_sealed: supertraits @fold @transform(op: "count")
+                            @filter(op: "one_of", value: ["$sealed_marker"])
+                            @tag("baseline_sealed")
+                    }
+                }
+            }
+            current {
+                item {
+                    ... on Trait {
+                        name @output
+
+                        current_sealed: supertraits @fold @transform(op: "count")
+                            @filter(op: "one_of", value: ["$sealed_marker"])
+                        sealed_diff @filter(op: "!=", value: ["%baseline_sealed"]) {
+                            current_sealed @output
+                        }
+                        span_: span @optional {
+                            filename @output
+                            begin_line @output
+                        }
+                    }
+                }
+            }
+        }
+    }
+    "#,
+    arguments: {
+        "sealed_marker": [
+            ["mycrate", "sealed", "Sealed"]
+        ]
+    },
+    error_message: "The sealing status of trait {{name}} has changed. Please review this high-risk change carefully.",
+    per_result_error_template: Some("trait {{name}} sealing status changed (baseline sealed count: {{%baseline_sealed}}, current: {{current_sealed}}) in {{span_filename}}:{{span_begin_line}}"),
+)
